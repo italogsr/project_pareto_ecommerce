@@ -10,13 +10,14 @@ class GdgHomeSpider(scrapy.Spider):
 
     def parse(self, response):
         categorias = response.xpath(
-        './/div[@class="main-nav-sub"]/div[@class="main-nav-sub--container has-sub todas-as-categorias"]/div[@class="main-nav-sub--links"]/a'
+        '//nav[@class="sidebar-home"]//li/a'
+        #'.//div[@class="main-nav-sub"]/div[@class="main-nav-sub--container has-sub todas-as-categorias"]/div[@class="main-nav-sub--links"]/a'
         )
         
         self.log(len(categorias))
         for categoria in categorias:
             cat_url = categoria.xpath('./@href').extract_first()
-            
+            cat_nome = categoria.xpath('./text()')
             link = 'http://www.graodegente.com.br' + cat_url
         
             yield scrapy.Request(
@@ -31,7 +32,8 @@ class GdgHomeSpider(scrapy.Spider):
         
         #Nome das Categorias             
         categoria = response.xpath(            
-            '//ol[@class="container-flex"]/li[last()]/span/strong/text()'
+            '//input[@id="categoria-nome"]/@value'
+            #'//ol[@class="container-flex"]/li[last()]/span/strong/text()'
         ).extract_first()        
                       
         #Coletar Produtos
@@ -40,43 +42,46 @@ class GdgHomeSpider(scrapy.Spider):
             loader = ItemLoader(item=GdgScrapyItem(),
                                 selector = produto)
 
+            url = './/meta[@itemprop="url"]/@content'
+            desconto =  './/p[@class ="content__discount"]/text()'
+            valor_boleto =  './/p[@class="content__price"]/span[last()]/text()'
+            nome = './/h2/text()'
+            imagem = './/div[@class="product-tile--container__figure"]//img/@src'
+            valor_riscado =  '.mini-letter span ::text'
+            parcelas = '.content__installments ::text'
+            ref = '.content__ref ::text'
+            esgotado = './/div[@class="product-tile__soldoff"]/p/text()'
+            promocao = './/img[@alt="Promoção"]/@src'
+            entrega_imediata = './/div[@class="seloEntregaImediata"]//text()'
+            frete_gratis = './/a[@class="content__freeShip freeShip-open"]/text()'
+            lancamento = './/p[@class="figure__release-tag"]/text()'
 
-            loader.add_xpath('url', './/meta[@itemprop="url"]/@content')
-            loader.add_xpath('desconto', './/p[@class ="content__discount"]/text()')
-            loader.add_xpath('valor_boleto', './/p[@class="content__price"]/span[3]/text()')        
-            loader.add_xpath('nome', './/h2/text()')
-            loader.add_xpath('imagem', './/div[@class="product-tile--container__figure"]//img/@src')
-            loader.add_css('valor_riscado', '.mini-letter span ::text')            
-            loader.add_css('parcelas', '.content__installments ::text')
-            loader.add_css('ref', '.content__ref ::text')
+
+            loader.add_xpath('url', url)
+            loader.add_xpath('desconto', desconto)
+            loader.add_xpath('valor_boleto', valor_boleto)        
+            loader.add_xpath('nome', nome)
+            loader.add_xpath('imagem', imagem)
+            loader.add_css('valor_riscado', valor_riscado)            
+            loader.add_css('parcelas', parcelas)
+            loader.add_css('ref', ref)
             loader.add_value('categoria', categoria)
-            
+            loader.add_xpath('esgotado', esgotado)
+            loader.add_xpath('promocao', promocao)
+            loader.add_xpath('entrega_imediata', entrega_imediata)
+            loader.add_xpath('frete_gratis', frete_gratis)
+            loader.add_xpath('lancamento', lancamento)
             item = loader.load_item()
             
             
-            #item['url'] = produto.xpath('.//meta[@itemprop="url"]/@content').extract_first()
-            #item['ref'] = produto.css('.content__ref ::text').get()
-            #item['nome']= produto.xpath('.//h2/text()').extract_first()
-            #item['imagem'] = produto.xpath('.//div[@class="product-tile--container__figure"]//img/@src').extract_first()
-            #item['valor_riscado'] = response.css(".mini-letter span ::text").get()
-            #item['valor_boleto'] = produto.xpath('.//p[@class="content__price"]/span[3]/text()').extract_first()
-            #item['parcelas'] =  produto.css(".content__installments ::text").get()
-            #item['desconto'] = produto.xpath('.//p[@class ="content__discount"]/text()').extract_first()
+          
             
             yield item   
         
-        #yield{
-        #        'ref': ref,
-        #        'url': url,
-        #        'categoria': categoria,
-        #        'nome': nome,
-        #        'imagem': imagem,
-        #        'valor_riscado': valor_riscado,
-        #        'valor_boleto': valor_boleto,
-        #        'parcelas': parcelas,
-        #        'desconto': desconto
-        #    }
-        next_page = response.xpath('//ul[@class ="paginate container-flex"]/li[last()]/a/@href').extract_first()
+        
+        next_page = response.xpath('//ul[@class ="paginate container-flex"]/li[last()]/a/@href'
+        ).extract_first()
+        
         np_complete_url = 'http://www.graodegente.com.br' + next_page
 
         if next_page is not None:

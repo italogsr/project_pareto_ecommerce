@@ -14,7 +14,6 @@ def remove_moeda(valor):
 def remove_valor_riscado(valor_riscado):
     return valor_riscado.replace('de R$', '').strip()
 
-
 def remove_ref(valor_raw):
     return valor_raw.replace('Ref:','').strip()
 
@@ -63,5 +62,9 @@ class GdgScrapyItem(scrapy.Item):
     )
     
     categoria = scrapy.Field(output_processor=TakeFirst())
-    
 
+    esgotado = scrapy.Field()
+    promocao = scrapy.Field()
+    entrega_imediata = scrapy.Field()
+    frete_gratis = scrapy.Field()
+    lancamento = scrapy.Field()
