@@ -6,16 +6,19 @@
 import scrapy
 from scrapy.loader import ItemLoader
 from itemloaders.processors import TakeFirst, MapCompose
+import re
 
 def remove_moeda(valor):
-    return valor.replace('R$', '').strip()
+    return float(valor.replace('R$', '').replace('.','').replace(',','.').strip())
 
+def limpa_categoria(valor):
+   return re.sub('\d+','', valor).split('/')[3].replace('-', ' ').title().strip()
 
-def remove_valor_riscado(valor_riscado):
-    return valor_riscado.replace('de R$', '').strip()
+def remove_valor_riscado(valor):
+    return float(valor.replace('de R$', '').replace('.', '').replace(',', '.').strip())
 
-def remove_ref(valor_raw):
-    return valor_raw.replace('Ref:','').strip()
+def remove_ref(valor):
+    return valor.replace('Ref:','').strip()
 
 
 def limpa_desconto(valor):
@@ -25,21 +28,36 @@ def limpa_desconto(valor):
 def limpa_parcelas(condicao):
     return condicao.strip()
 
+def testa_esgotado(value):
+    return isinstance(value, str)
 
 class GdgScrapyItem(scrapy.Item):
     # define the fields for your item here like:
-    name = scrapy.Field(output_processor=TakeFirst())
+    name = scrapy.Field(
+        output_processor=TakeFirst()
+    )
     
-    url = scrapy.Field(output_processor=TakeFirst())
+    url = scrapy.Field(
+        output_processor=TakeFirst()
+    )
     
     ref = scrapy.Field(
         input_processor=MapCompose(remove_ref),
         output_processor=TakeFirst()
     )
     
-    nome = scrapy.Field(output_processor=TakeFirst())
+    nome = scrapy.Field(
+        output_processor=TakeFirst()
+    )
+
+    categoria_url = scrapy.Field(
+        input_processor = MapCompose(limpa_categoria),
+        output_processor = TakeFirst()
+    )
     
-    imagem = scrapy.Field(output_processor=TakeFirst())
+    imagem = scrapy.Field(
+        output_processor=TakeFirst()
+    )
     
     valor_riscado = scrapy.Field(
         input_processor=MapCompose(remove_valor_riscado),
@@ -51,7 +69,7 @@ class GdgScrapyItem(scrapy.Item):
         output_processor=TakeFirst()
     )
     
-    parcelas =  scrapy.Field(
+    str_parcelas =  scrapy.Field(
         input_processor=MapCompose(limpa_parcelas),
         output_processor=TakeFirst()
     )
@@ -61,10 +79,31 @@ class GdgScrapyItem(scrapy.Item):
         output_processor=TakeFirst()
     )
     
-    categoria = scrapy.Field(output_processor=TakeFirst())
+    categoria = scrapy.Field(
+        output_processor=TakeFirst()
+    )
 
-    esgotado = scrapy.Field()
-    promocao = scrapy.Field()
-    entrega_imediata = scrapy.Field()
-    frete_gratis = scrapy.Field()
-    lancamento = scrapy.Field()
+    esgotado = scrapy.Field(
+        input_processor=MapCompose(testa_esgotado),
+        output_processor=TakeFirst()
+    )
+    
+    promocao = scrapy.Field(
+        output_processor=TakeFirst()
+    )
+    
+    entrega_imediata = scrapy.Field(
+        output_processor=TakeFirst()
+    )
+    
+    frete_gratis = scrapy.Field(
+        output_processor=TakeFirst()
+    )
+    
+    lancamento = scrapy.Field(
+        output_processor=TakeFirst()
+    )
+    
+    data_scrapy = scrapy.Field(
+        output_processor=TakeFirst()
+    )
