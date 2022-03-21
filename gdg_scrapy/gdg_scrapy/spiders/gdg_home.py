@@ -8,38 +8,28 @@ from itemloaders import ItemLoader
 class GdgHomeSpider(scrapy.Spider):
     name = 'gdg_home'
     allowed_domains = ['www.graodegente.com.br']
-    start_urls = ['https://www.graodegente.com.br/abajur-1']
-
-#    def parse(self, response):
-#        categorias = response.xpath(
-#       '//nav[@class="sidebar-home"]//li/a'
-#        #'.//div[@class="main-nav-sub"]/div[@class="main-nav-sub--container has-sub todas-as-categorias"]/div[@class="main-nav-sub--links"]/a'
-#        )
-        
-#        self.log(len(categorias))
-#       date = detetime.now().strftime()('%Y-%m-%d %H:%M:%S') 
-#       for categoria in categorias:
-#           cat_url = categoria.xpath('./@href').extract_first()
-#           cat_nome = categoria.xpath('./text()')
-#           link = 'http://www.graodegente.com.br' + cat_url
-       
-#           yield scrapy.Request(
-#               url=link,
-#               callback=self.parse_category
-#           )
+    start_urls = ['https://www.graodegente.com.br']
 
     def parse(self, response):
+        categorias = response.xpath(
+       '//nav[@class="sidebar-home"]//li/a'
+        )
+       
+        self.log(len(categorias))
         
-        item = GdgScrapyItem()
+        for categoria in categorias:
+            cat_url = categoria.xpath('./@href').extract_first()
+            cat_nome = categoria.xpath('./text()')
+            link = 'http://www.graodegente.com.br' + cat_url
+            yield scrapy.Request(
+                url=link,
+                callback=self.parse_grid
+            )
+
+    def parse_grid(self, response):
         
-        
-        #Nome das Categorias (Não está coletando corretamente (Será se isso ocorre apenas em itens duplicados?))             
-        
-        #categoria = response.xpath(            
-        #    '//input[@id="categoria-nome"]/@value'
-            #'//ol[@class="container-flex"]/li[last()]/span/strong/text()'
-        #).extract_first()        
-                      
+        item = GdgScrapyItem()    
+                              
         #Coletar Produtos
         date = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         for produto in response.xpath('//ul[@class="grid-list"]/li'):
@@ -55,34 +45,33 @@ class GdgHomeSpider(scrapy.Spider):
             valor_riscado =  '.mini-letter span ::text'
             str_parcelas = '.content__installments ::text'
             ref = '.content__ref ::text'
-            esgotado = './/div[@class="product-tile__soldoff"]/p/text()'
+            esgotado = './/div[@class="product-tile__soldoff"]/p/text()'             
             promocao = './/img[@alt="Promoção"]/@src'
             entrega_imediata = './/div[@class="seloEntregaImediata"]//text()'
             frete_gratis = './/a[@class="content__freeShip freeShip-open"]/text()'
             lancamento = './/p[@class="figure__release-tag"]/text()'
 
+            
 
-            loader.add_xpath('url', url)
-            loader.add_xpath('desconto', desconto)
-            loader.add_xpath('valor_boleto', valor_boleto)        
-            loader.add_xpath('nome', nome)
-            loader.add_xpath('imagem', imagem)
-            loader.add_css('valor_riscado', valor_riscado)            
-            loader.add_css('str_parcelas', str_parcelas)
-            loader.add_css('ref', ref)
+            loader.add_xpath('url', url) if produto.xpath(url) else loader.add_value('url', 'NA')
             
-            if produto in response.xpath('//ul[@class="grid-list"]/li'):
-                loader.add_xpath('esgotado', esgotado)
-            else:
-                loader.add_value('esgotado', False)
+            loader.add_xpath('desconto', desconto) if produto.xpath(desconto) else loader.add_value('desconto', '0')
+            loader.add_xpath('valor_boleto', valor_boleto) if produto.xpath(valor_boleto) else loader.add_value('valor_boleto', '0')        
+            loader.add_xpath('nome', nome) if produto.xpath(nome) else loader.add_value('nome', 'NA')
+            loader.add_xpath('imagem', imagem) if produto.xpath(imagem) else loader.add_value('imagem', 'NA')
+            loader.add_css('valor_riscado', valor_riscado) if produto.css(valor_riscado) else loader.add_value('valor_riscado', '0')            
+            #loader.add_css('str_parcelas', str_parcelas)
+            loader.add_css('ref', ref) if produto.css(ref) else loader.add_value('ref', 'NA')           
+            loader.add_xpath('esgotado', esgotado) if produto.xpath(esgotado) else loader.add_value('esgotado', False)       
             
-            loader.add_xpath('promocao', promocao)
-            loader.add_xpath('entrega_imediata', entrega_imediata)
-            loader.add_xpath('frete_gratis', frete_gratis)
-            loader.add_xpath('lancamento', lancamento)
-            loader.add_value('data_scrapy', date)
-            loader.add_xpath('categoria_url', url)
-            
+            loader.add_xpath('promocao', promocao) if produto.xpath(promocao) else loader.add_value('promocao', False)
+            loader.add_xpath('entrega_imediata', entrega_imediata) if produto.xpath(entrega_imediata) else loader.add_value('entrega_imediata', False)
+            loader.add_xpath('frete_gratis', frete_gratis) if produto.xpath(frete_gratis) else loader.add_value('frete_gratis', False)
+            loader.add_xpath('lancamento', lancamento) if produto.xpath(lancamento) else loader.add_value('lancamento', False)
+            loader.add_value('date_scrapy', date)
+            loader.add_xpath('categoria_url', url) if produto.xpath(url) else loader.add_value('categoria_url', 'NA')
+            loader.add_css('n_parcelas', str_parcelas) if produto.css(str_parcelas) else loader.add_value('n_parcelas', '0')
+            loader.add_css('valor_parcelas', str_parcelas) if produto.css(str_parcelas) else loader.add_value('valor_parcelas', '0')
             item = loader.load_item()
             
             
@@ -97,4 +86,4 @@ class GdgHomeSpider(scrapy.Spider):
         np_complete_url = 'http://www.graodegente.com.br' + next_page
 
         if next_page is not None:
-            yield response.follow(np_complete_url, callback=self.parse)
+            yield response.follow(np_complete_url, callback=self.parse_grid)
