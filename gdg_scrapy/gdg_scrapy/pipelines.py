@@ -5,7 +5,7 @@
 
 
 # useful for handling different item types with a single interface
-import sqlite3
+import mysql.connector
 from itemadapter import ItemAdapter
 from scrapy.exceptions import DropItem
 
@@ -19,39 +19,41 @@ class GdgScrapyPipeline:
     
     
     def create_conection(self):    
-        self.conn = sqlite3.connect('gdg_db_geral')
+        #Dados de autenticação definidos no arquivo json
+        self.conn = mysql.connector.connect(
+            host = "host_name",
+            user = "user_name",
+            passwd = "passwd",
+            database = "database_name"
+        )
         self.cur = self.conn.cursor()
      
     
     def create_table(self):
-        self.cur.execute(""" CREATE TABLE IF NOT EXISTS gdg_produtos_3(
+        self.cur.execute(""" CREATE TABLE IF NOT EXISTS produtos(
         url              TEXT,
-        desconto         REAL,
-        valor_boleto     REAL,       
+        desconto         FLOAT,
+        valor_boleto     FLOAT,       
         nome             TEXT, 
         imagem           TEXT,
-        valor_riscado    REAL,            
+        valor_riscado    FLOAT,            
         ref              TEXT,            
-        esgotado         TEXT,
-        promocao         TEXT,
-        entrega_imediata TEXT,
-        frete_gratis     TEXT, 
-        lancamento       TEXT, 
-        date_scrapy      TEXT,
+        esgotado         BOOL,
+        promocao         BOOL,
+        entrega_imediata BOOL,
+        frete_gratis     BOOL, 
+        lancamento       BOOL, 
+        date_scrapy      DATETIME,
         categoria_url    TEXT,
-        n_parcelas       REAL,
-        valor_parcelas   REAL
+        n_parcelas       INT,
+        valor_parcelas   FLOAT
         )""")
     
     def process_item(self, item, spider):
         #Converter desconto para decimal 
         item['desconto'] = float(item['desconto'])/100
 
-        #Dropar Dublicados
-        #if item['ref'] in self.ref_seen:
-        #    raise DropItem("Duplicate item refs found: %s" % item)
-        #else:
-        #    self.ref_seen.add(item['ref'])            
+        #Remover item duplicado        
         adapter = ItemAdapter(item)
        
         if adapter['ref'] in self.ref_seen:
@@ -65,7 +67,24 @@ class GdgScrapyPipeline:
         
 
     def store_db(self, item):
-        self.cur.execute(""" INSERT OR IGNORE INTO gdg_produtos_3 VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+        self.cur.execute(
+            """INSERT INTO produtos (url,
+            desconto,
+            valor_boleto,
+            nome,
+            imagem,
+            valor_riscado,
+            ref,
+            esgotado,
+            promocao,
+            entrega_imediata,
+            frete_gratis,
+            lancamento,
+            date_scrapy,
+            categoria_url,
+            n_parcelas,
+            valor_parcelas) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)""",
+            
             (item['url'],
             item['desconto'],
             item['valor_boleto'],       
