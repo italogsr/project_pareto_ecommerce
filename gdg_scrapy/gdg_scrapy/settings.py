@@ -69,7 +69,7 @@ ROBOTSTXT_OBEY = False
 import creds
 BIGQUERY_DATASET = "scrapy_data"
 BIGQUERY_TABLE = "test_products"
-BIGQUERY_SERVICE_ACCOUNT = creds.cred #Verificar bug
+BIGQUERY_SERVICE_ACCOUNT = creds.cred #Verificar Novo Bug
 
 ITEM_PIPELINES = {
     
