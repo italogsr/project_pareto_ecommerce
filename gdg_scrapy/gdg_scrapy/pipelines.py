@@ -5,49 +5,16 @@
 
 
 # useful for handling different item types with a single interface
-import mysql.connector
 from itemadapter import ItemAdapter
 from scrapy.exceptions import DropItem
 
+
+
 class GdgScrapyPipeline:
     def __init__(self):
-        self.create_conection()
-        self.create_table()
         self.ref_seen = set()
- 
 
-    
-    
-    def create_conection(self):    
-        #Dados de autenticação definidos no arquivo json
-        self.conn = mysql.connector.connect(
-            host = "host_name",
-            user = "user_name",
-            passwd = "passwd",
-            database = "database_name"
-        )
-        self.cur = self.conn.cursor()
-     
-    
-    def create_table(self):
-        self.cur.execute(""" CREATE TABLE IF NOT EXISTS produtos(
-        url              TEXT,
-        desconto         FLOAT,
-        valor_boleto     FLOAT,       
-        nome             TEXT, 
-        imagem           TEXT,
-        valor_riscado    FLOAT,            
-        ref              TEXT,            
-        esgotado         BOOL,
-        promocao         BOOL,
-        entrega_imediata BOOL,
-        frete_gratis     BOOL, 
-        lancamento       BOOL, 
-        date_scrapy      DATETIME,
-        categoria_url    TEXT,
-        n_parcelas       INT,
-        valor_parcelas   FLOAT
-        )""")
+
     
     def process_item(self, item, spider):
         #Converter desconto para decimal 
@@ -61,45 +28,23 @@ class GdgScrapyPipeline:
         else:
             self.ref_seen.add(adapter['ref'])
                   
-        #Grava no DB
-        self.store_db(item)
-        return item
         
-
-    def store_db(self, item):
-        self.cur.execute(
-            """INSERT INTO produtos (url,
-            desconto,
-            valor_boleto,
-            nome,
-            imagem,
-            valor_riscado,
-            ref,
-            esgotado,
-            promocao,
-            entrega_imediata,
-            frete_gratis,
-            lancamento,
-            date_scrapy,
-            categoria_url,
-            n_parcelas,
-            valor_parcelas) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)""",
-            
-            (item['url'],
-            item['desconto'],
-            item['valor_boleto'],       
-            item['nome'], 
-            item['imagem'],
-            item['valor_riscado'],            
-            item['ref'],            
-            item['esgotado'],
-            item['promocao'],
-            item['entrega_imediata'],
-            item['frete_gratis'], 
-            item['lancamento'], 
-            item['date_scrapy'],
-            item['categoria_url'],
-            item['n_parcelas'],
-            item['valor_parcelas']
-         ))       
-        self.conn.commit()
+        self.produtos = {'url': item['url'],
+            'desconto': item['desconto'],
+            'valor_boleto': item['valor_boleto'],       
+            'nome': item['nome'], 
+            'imagem': item['imagem'],
+            'valor_riscado': item['valor_riscado'],            
+            'ref':  item['ref'],            
+            'esgotado': item['esgotado'],
+            'promocao': item['promocao'],
+            'entrega_imediata': item['entrega_imediata'],
+            'frete_gratis': item['frete_gratis'], 
+            'lancamento': item['lancamento'], 
+            'date_scrapy': item['date_scrapy'],
+            'categoria_url': item['categoria_url'],
+            'n_parcelas': item['n_parcelas'],
+            'valor_parcelas': item['valor_parcelas']}
+        
+        return self.produtos
+    

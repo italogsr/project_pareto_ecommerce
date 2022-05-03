@@ -8,7 +8,7 @@ from itemloaders import ItemLoader
 class GdgHomeSpider(scrapy.Spider):
     name = 'gdg_home'
     allowed_domains = ['www.graodegente.com.br']
-    start_urls = ['https://www.graodegente.com.br']
+    start_urls = ['https://www.graodegente.com.br/']
 
     def parse(self, response):
         categorias = response.xpath(
@@ -60,7 +60,7 @@ class GdgHomeSpider(scrapy.Spider):
             loader.add_xpath('nome', nome) if produto.xpath(nome) else loader.add_value('nome', 'NA')
             loader.add_xpath('imagem', imagem) if produto.xpath(imagem) else loader.add_value('imagem', 'NA')
             loader.add_css('valor_riscado', valor_riscado) if produto.css(valor_riscado) else loader.add_value('valor_riscado', '0')            
-            #loader.add_css('str_parcelas', str_parcelas)
+            
             loader.add_css('ref', ref) if produto.css(ref) else loader.add_value('ref', 'NA')           
             loader.add_xpath('esgotado', esgotado) if produto.xpath(esgotado) else loader.add_value('esgotado', False)       
             
